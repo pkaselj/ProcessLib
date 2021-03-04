@@ -10,24 +10,23 @@
  */
 class Process
 {
-    private:
-    /// Pathname to a process executable
-    std::string m_pathname = "";
-    std::vector<char*> m_arguments;
+public:
 
-    // TODO : Create getter.
-    /// Process PID, set to -1 by default. Set by `initiate()`.
-    int m_pid = -1;
+    typedef enum
+    {
+        NOT_STARTED,
+        RUNNING,
+        STOPPED
+    } enuProcessStatus;
 
-    public:
-
+    enuProcessStatus getStatus() const { return m_status; }
 
     /// Default constructor is deleted since Process without executable makes no sense
     Process() = delete;
 
     /**
      * @brief Construct a new Process object
-     * 
+     *
      * @param _pathname Pathname to a process executable
      */
     Process(const std::string& pathname);
@@ -35,16 +34,16 @@ class Process
 
     /**
      * @brief Destroy the Process object
-     * 
+     *
      */
     ~Process() {}; // for shared memory
 
     /**
      * @brief Executes the process.
-     * 
+     *
      * Process executable pathname is initialized in constructor, \n
      * and stored in `pathname` memeber variable. \n
-     * 
+     *
      * @return int returns PID of process
      */
     int initiate();
@@ -60,6 +59,19 @@ class Process
     unsigned int getPID() const { return m_pid; }
 
     void restart();
+
+    private:
+    /// Pathname to a process executable
+    std::string m_pathname = "";
+    std::vector<char*> m_arguments;
+
+    // TODO : Create getter.
+    /// Process PID, set to -1 by default. Set by `initiate()`.
+    int m_pid = -1;
+
+    enuProcessStatus m_status;
+
+
 };
 
 #endif

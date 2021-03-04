@@ -10,6 +10,8 @@ ProcessManager::ProcessManager(ILogger* _p_logger)
     m_pLogger = _p_logger;
     if(m_pLogger == nullptr)
         m_pLogger = NulLogger::getInstance();
+
+    *m_pLogger << "ProcessManager created!";
 }
 
 ProcessManager::~ProcessManager()
@@ -24,7 +26,7 @@ ProcessManager::~ProcessManager()
         m_processes.pop_back();
     }
 
-    
+    *m_pLogger << "ProcessManager destroyed!";
     
 }
 
@@ -79,7 +81,7 @@ int ProcessManager::initiateAll()
         }
 
         *m_pLogger << "Initiated process: \"" + process->getName() + "\" with PID: " + std::to_string(pid);
-            
+        Kernel::Trace("Initiated process: \"" + process->getName() + "\" with PID: " + std::to_string(pid));
     }
 
     return pid;
@@ -88,9 +90,24 @@ int ProcessManager::initiateAll()
 
 void ProcessManager::killAll()
 { 
+    *m_pLogger << "Kill all!";
     for (auto& process : m_processes)
     {
-        process->killProcess();
+        *m_pLogger << "Process: " + process->getName();
+
+        *m_pLogger << "\tChecking if it already exited.";
+        int childExited = waitpid(process->getPID(), nullptr, WNOHANG);
+        if (childExited == 0) // Child didn't exit
+        {
+            *m_pLogger << "\tProcess still running!";
+            process->killProcess();
+
+            waitpid(process->getPID(), nullptr, 0);
+        }
+
+        *m_pLogger << "Child with PID: " + std::to_string(process->getPID()) + " killed!";
+        Kernel::Trace("Child with PID: " + std::to_string(process->getPID()) + " killed!");
+        
     }
 
     // sleep(5); // TODO define waiting time
@@ -100,18 +117,40 @@ void ProcessManager::killAll()
 
 void ProcessManager::forceKillAll()
 {
+    *m_pLogger << "Force kill all!";
     for (auto& process : m_processes)
     {
-        process->forceKillProcess();
-        // delete process;
+        *m_pLogger << "Process: " + process->getName();
+
+        *m_pLogger << "\tChecking if it already exited.";
+        int childExited = waitpid(process->getPID(), nullptr, WNOHANG);
+        if (childExited == 0) // Child didn't exit
+        {
+            *m_pLogger << "\tProcess still running!";
+            process->forceKillProcess();
+
+            waitpid(process->getPID(), nullptr, 0);
+        }
+
+        *m_pLogger << "Child with PID: " + std::to_string(process->getPID()) + " forcefully killed!";
+        Kernel::Trace("Child with PID: " + std::to_string(process->getPID()) + " forcefully killed!");
+        
+        delete process;
     }
         
+    /*
+        int pid_done = -1;
+        while ((pid_done = wait(NULL)) > 0)
+        {
+            *m_pLogger << "Child with PID: " + std::to_string(pid_done) + " exited!";
+            Kernel::Trace("Child with PID: " + std::to_string(pid_done) + " exited!");
+        }
+    */
 
-    int pid_done = -1;
-    while ((pid_done = wait(NULL)) > 0)
-        *m_pLogger << "Child with PID: " + std::to_string(pid_done) + " exited!";
+        
 
     *m_pLogger << "All children exited!";
+    Kernel::Trace("All children exited!");
 }
 
 void ProcessManager::resetProcess(unsigned int PID)
@@ -127,5 +166,8 @@ void ProcessManager::resetProcess(unsigned int PID)
     }
 
     (*position)->restart();
+
+    *m_pLogger << "Restarted process: \"" + (*position)->getName() + "\" with PID: " + std::to_string((*position)->getPID());
+    Kernel::Trace("Restarted process: \"" + (*position)->getName() + "\" with PID: " + std::to_string((*position)->getPID()) );
 
 }
